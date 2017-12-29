@@ -10,6 +10,28 @@ var console = require("josm/scriptingconsole");
 var l = josm.layers.length;
 var command = require("josm/command");
 
+function load_file(filePath){
+    var Files = java.nio.file.Files;
+    var Paths = java.nio.file.Paths;
+    var Stream = java.util.stream.Stream;
+    var Collectors = java.util.stream.Collectors;
+    var path  = "C:/510/RoadConOSM/out.json";
+
+    //var path  = "https://gist.githubusercontent.com/RubenGeo/b0e2bf2d2fcc2b641acc41594ed52010/raw/061e45df781c0c20d7f9b36e00298ac1597fb844/out.json";
+
+    var console = require("josm/scriptingconsole");
+
+    // read the lines in a list ...
+    var lines = Files.lines(Paths.get(path)).collect(Collectors.toList());
+
+    // It's only one line, parse it to json
+    var line = lines.get(0)
+
+    var obj = JSON.parse(line);
+
+    return obj
+} 
+
 function get_current_dataset(){
     var layers = require("josm/layers");
     layer =  layers.activeLayer;
@@ -87,20 +109,7 @@ function PotentialError (wayID, startPoint, endPoint) {
  
 PotentialError.prototype.show_error_area = function() {    
     var ds1 =  download_box_from_lat_lon(this.startPoint[0], this.startPoint[1])
-    var ds2 = download_box_from_lat_lon(this.endPoint[0], this.endPoint[1])
-
-    
-    //ds1.each(doeIets)
-    
-/*     function doeIets(p) {
-        console.println(p)
-        console.println('Hoi')
-        ds2.add(p)
-        console.println('Doei')
-    } */
-
-
-    
+    var ds2 = download_box_from_lat_lon(this.endPoint[0], this.endPoint[1])   
     josm.layers.addDataLayer({ds: ds1, name: "PotentialError"});
     josm.layers.addDataLayer({ds: ds1, name: "PotentialError"});
 
@@ -121,6 +130,44 @@ function loop_through_errors(errorList){
         layers.remove("PotentialError");
     });
 };
+
+
+
+
+function json_to_js_error_list(jsonObj){
+    listOfErrors = []
+    
+    jsonObj.forEach(function(element) {
+            
+            currentError = new PotentialError(element.OsmId, element.latLongStart, element.latLongEnd)
+            listOfErrors.push(currentError)
+            
+            console.println(element.OsmId);
+    });
+
+    return listOfErrors 
+}
+  
+    
+var filePath = "C:/510/RoadConOSM/out.json";
+
+var jsonObj = load_file(filePath)
+
+
+var errorList = json_to_js_error_list(jsonObj)
+
+loop_through_errors(errorList)
+
+console.println("Klaar " )
+
+
+
+
+
+
+
+
+
 
 var wayID = 24951029
 
@@ -144,12 +191,4 @@ var testWay1 = new PotentialError(wayID, [latStart, lonStart], [latEnd, lonEnd])
     
 var listOfWays = [testWay, testWay1]
 
-loop_through_errors(listOfWays)
-
-
-
-
-
-
-console.println("Klaar " )
 
