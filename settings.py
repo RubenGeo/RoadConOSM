@@ -2,5 +2,5 @@
 
 dbName = 'roads'
 dbUsername = 'postgres'
-dbPassword ='plukuwplan1'
+dbPassword ='yourFavoritePassword'
 dbHost = 'localhost'
