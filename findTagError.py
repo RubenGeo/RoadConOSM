@@ -12,14 +12,18 @@ roadTypes = ['primary', 'tertiary']
 
 
 
-
-
-        
-
-        
+def create_error_message(potentialWrongTagIds, roadType):
+    pontentialWrongTagErrors = []
+    
+    for id in potentialWrongTagIds:
+        errorMessage = 'Road with id: '+ str(id) + ' could have a wrong tag, the tag may be ' + roadType
+        pontentialWrongTagErrors.append([id, errorMessage])
+    return pontentialWrongTagErrors
         
 def find_end_connection_to_2different_tags(roadTypes):
     wronglyTaggedWays = {}
+    allPotentialWrongTagErrors = []
+    
     for roadType in roadTypes:
         
         #Select all end points of the ways of interest
@@ -49,15 +53,22 @@ def find_end_connection_to_2different_tags(roadTypes):
         #Find ways that are in both list so which are connect to two end point of a different road type
         potentialWrongTagIds = [val for val in waysStartPointConnected if val in waysEndPointConnected]
         wronglyTaggedWays[roadType] = potentialWrongTagIds
-
+        
+        pontentialWrongTagErrors = create_error_message(potentialWrongTagIds, roadType)
+        
+        #Creates a list of all poterntial errors with every tag
+        allPotentialWrongTagErrors.extend(pontentialWrongTagErrors)
+        
+        
         print(waysStartPointConnected)
         print(waysEndPointConnected)
-    print(wronglyTaggedWays)
-    return potentialWrongTagIds
+    
+    print(allPotentialWrongTagErrors)
+    return allPotentialWrongTagErrors
     
 def create_wrongway_class(listWayId):
     class potentialWrongWayClass:       
-        def __init__(self, osmId, length, type, startPoint, endPoint, latLongStart, latLongEnd):
+        def __init__(self, osmId, length, type, startPoint, endPoint, latLongStart, latLongEnd, errorMes):
             self.osmId = osmId
             self.length = length
             self.type = type
@@ -65,21 +76,27 @@ def create_wrongway_class(listWayId):
             self.endPoint = endPoint
             self.latLongStart = latLongStart
             self.latLongEnd = latLongEnd
+            self.errorMes = errorMes
 
     listOfWayInstances = []        
-    for wayId in listWayId:
+    for way in listWayId:
+        wayId = way[0]
         sql = "SELECT * from end_nodes WHERE OSMID  = %s;" 
         cur.execute(sql, (wayId,))
         wayInfo = cur.fetchall()
         wayInfo = wayInfo[0]
         
-        sql = "SELECT ST_Y(start_point), ST_X(start_point), ST_Y(end_point), ST_X(end_point) from end_nodes WHERE OSMID  = %s;" 
-        
+        sql = "SELECT ST_Y(start_point), ST_X(start_point), ST_Y(end_point), ST_X(end_point) from end_nodes WHERE OSMID  = %s;"        
         cur.execute(sql, (wayId,))
+        
+        
+        
+        
+        
         latLongs = cur.fetchall()
         latLongs = latLongs[0]
-        
-        x = potentialWrongWayClass(wayInfo[1], wayInfo[2], wayInfo[3], wayInfo[4], wayInfo[5], [latLongs[0], latLongs[1]], [latLongs[2],latLongs[3]])
+        errorMes = way[1]
+        x = potentialWrongWayClass(wayInfo[1], wayInfo[2], wayInfo[3], wayInfo[4], wayInfo[5], [latLongs[0], latLongs[1]], [latLongs[2],latLongs[3]], errorMes)
         listOfWayInstances.append(x)
     print(listOfWayInstances)
     return listOfWayInstances
@@ -94,31 +111,37 @@ def delete_ways_also_connected_to_self(listPotentialWrongWays):
 
 def write_errors_to_json(listPotentialWrongWays, jsonOutName):
     listOfWayDicts= []
+    
+    #This should be changed to a proper error message
+    #errorMes = 'This potential error has yet to be defined'
+    
+    
     for way in listPotentialWrongWays:
-        dictWays = {'OsmId':way.osmId, 'latLongStart': way.latLongStart, 'latLongEnd' : way.latLongEnd, 'errorStatus' : 'open'}
+        print( way.type)
+        dictWays = {'OsmId':way.osmId, 'latLongStart': way.latLongStart, 'latLongEnd' : way.latLongEnd, 'errorStatus' : 'open', 'errorMes' : way.errorMes}
         listOfWayDicts.append(dictWays)
 
     with open(jsonOutName, 'w') as outfile:
         json.dump(listOfWayDicts, outfile)
         pprint.pprint(listOfWayDicts)
         
-#potentialWrongTagIds = find_end_connection_to_2different_tags(roadTypes)
+potentialWrongTagIds = find_end_connection_to_2different_tags(roadTypes)
 
-#listPotentialWrongWays = create_wrongway_class(potentialWrongTagIds)
-
-
-
-
+listPotentialWrongWays = create_wrongway_class(potentialWrongTagIds)
+jsonOutName = 'outErrors1.json'
+write_errors_to_json(listPotentialWrongWays, jsonOutName)
 
 
 jsonOutName = 'outErrors1.json'
 
-testList = [24951029, 28972086, 30723581]
-testOutList = create_wrongway_class(testList)
-write_errors_to_json(testOutList, jsonOutName)
+# errorMes  = 'This error message has yet to be defined'
+
+# testList = [[24951029, errorMes],[28972086, errorMes],[30723581, errorMes]]
+# testOutList = create_wrongway_class(testList)
+# write_errors_to_json(testOutList, jsonOutName)
 
 
-print (testOutList[0].latLongStart)
-print (testOutList[0].latLongEnd)
+# print (testOutList[0].latLongStart)
+# print (testOutList[0].latLongEnd)
 
 
