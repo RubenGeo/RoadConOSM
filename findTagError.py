@@ -92,14 +92,15 @@ def delete_ways_also_connected_to_self(listPotentialWrongWays):
     
 
 
-def write_errors_to_json(listPotentialWrongWays):
+def write_errors_to_json(listPotentialWrongWays, jsonOutName):
     listOfWayDicts= []
     for way in listPotentialWrongWays:
-        dictWays = {'OsmId':way.osmId, 'latLongStart': way.latLongStart, 'latLongEnd' : way.latLongEnd}
+        dictWays = {'OsmId':way.osmId, 'latLongStart': way.latLongStart, 'latLongEnd' : way.latLongEnd, 'errorStatus' : 'open'}
         listOfWayDicts.append(dictWays)
 
-    with open('out.json', 'w') as outfile:
+    with open(jsonOutName, 'w') as outfile:
         json.dump(listOfWayDicts, outfile)
+        pprint.pprint(listOfWayDicts)
         
 #potentialWrongTagIds = find_end_connection_to_2different_tags(roadTypes)
 
@@ -110,9 +111,11 @@ def write_errors_to_json(listPotentialWrongWays):
 
 
 
-testList = [24951029, 25831468, 28972086]
+jsonOutName = 'outErrors1.json'
+
+testList = [24951029, 28972086, 30723581]
 testOutList = create_wrongway_class(testList)
-write_errors_to_json(testOutList)
+write_errors_to_json(testOutList, jsonOutName)
 
 
 print (testOutList[0].latLongStart)
